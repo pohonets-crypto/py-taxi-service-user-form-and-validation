@@ -6,14 +6,18 @@ from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .forms import DriverCreationForm, DriverLicenseUpdateForm, CarForm
-from .models import Driver, Car, Manufacturer
+from .models import Car, Manufacturer
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 @login_required
 def index(request):
     """View function for the home page of the site."""
 
-    num_drivers = Driver.objects.count()
+    num_drivers = User.objects.count()
     num_cars = Car.objects.count()
     num_manufacturers = Manufacturer.objects.count()
 
@@ -84,42 +88,44 @@ class CarDeleteView(LoginRequiredMixin, generic.DeleteView):
 
 
 class DriverListView(LoginRequiredMixin, generic.ListView):
-    model = Driver
+    model = User
     paginate_by = 5
 
 
 class DriverDetailView(LoginRequiredMixin, generic.DetailView):
-    model = Driver
-    queryset = Driver.objects.all().prefetch_related("cars__manufacturer")
+    model = User
+    queryset = User.objects.all().prefetch_related("cars__manufacturer")
 
 
 class DriverCreateView(LoginRequiredMixin, generic.CreateView):
-    model = Driver
+    model = User
     fields = "__all__"
     success_url = reverse_lazy("taxi:driver-list")
     form_class = DriverCreationForm
 
 
 class DriverUpdateView(LoginRequiredMixin, generic.UpdateView):
-    model = Driver
+    model = User
     fields = "__all__"
     success_url = reverse_lazy("taxi:driver-detail")
 
 
 class DriverDeleteView(LoginRequiredMixin, generic.DeleteView):
-    model = Driver
+    model = User
     success_url = reverse_lazy("taxi:driver-list")
 
 
 class DriverLicenseUpdateView(LoginRequiredMixin, generic.UpdateView):
-    model = Driver
+    model = User
     template_name = "taxi/driver-license-update.html"
-    success_url = reverse_lazy("taxi:driver-detail")
     form_class = DriverLicenseUpdateForm
+
+    def get_success_url(self):
+        return reverse_lazy("taxi:driver-detail", kwargs={"pk": self.object.pk})
 
 
 class DriverLicenseDeleteView(LoginRequiredMixin, generic.DeleteView):
-    model = Driver
+    model = User
     success_url = reverse_lazy("taxi:driver-detail")
     template_name = "taxi/driver-license-confirm-delete.html"
 
